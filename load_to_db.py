@@ -8,56 +8,58 @@ import os
 import re
 
 
-# Helper function to create a valid collection name based on file name
+# TODO Fix warnings
+
+# Generate a valid collection name based on the file name by sanitizing input
 def generate_valid_collection_name(epub_path):
     file_name = os.path.basename(epub_path)
     base_name, _ = os.path.splitext(file_name)
 
-    # Convert to a valid ChromaDB collection name by replacing invalid characters
-    valid_name = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)  # Replace invalid characters with underscores
-    return valid_name[:63]  # Ensure the name is between 3 and 63 characters long
+    # Replace invalid characters with underscores and limit to 63 characters
+    valid_name = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
+    return valid_name[:63]
 
 
-# Load EPUB file and extract title
+# Load EPUB content and extract the title for indexing
 def load_epub(file_path):
     book = epub.read_epub(file_path)
     text_content = ''
-    title = book.get_metadata('DC', 'title')[0][0]  # Extract the title from the EPUB metadata
+    title = book.get_metadata('DC', 'title')[0][0]  # Fetch the title from EPUB metadata
+
+    # Concatenate the text content from document items in the EPUB
     for item in book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
             text_content += item.get_content().decode('utf-8')
     return text_content, title
 
 
-# Save to ChromaDB
+# Load the EPUB content and save it to ChromaDB
 def save_to_db(epub_path):
-    epub_text, title = load_epub(epub_path)  # Get EPUB content and title
+    epub_text, title = load_epub(epub_path)
 
-    # Write EPUB text to temporary file
-    with open("temp_epub_text.txt", "w", encoding="utf-8") as f:  # Set encoding to UTF-8 to handle special characters
+    # Write the text content to a temporary file with UTF-8 encoding
+    with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
         f.write(epub_text)
 
-    loader = TextLoader("temp_epub_text.txt",
-                        encoding="utf-8")  # Ensure the loader reads the file with the correct encoding
+    # Load the content for ChromaDB indexing
+    loader = TextLoader("temp_epub_text.txt", encoding="utf-8")
 
-    # Use HuggingFaceEmbeddings from the updated package
+    # Use HuggingFaceEmbeddings for embedding the document
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Set up ChromaDB client
+    # Initialize the ChromaDB client and create a valid collection name
     vectorstore = chromadb.PersistentClient(path='db')
+    collection_name = generate_valid_collection_name(epub_path) + "2"
 
-    # Generate a valid collection name based on the input file name
-    collection_name = generate_valid_collection_name(epub_path)
-
-    # Create a collection with the generated valid name
+    # Create a collection with the sanitized name in ChromaDB
     collection = vectorstore.create_collection(name=collection_name)
 
-    # Create index with embeddings using `from_documents` method
+    # Index the documents with embeddings in the ChromaDB collection
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.from_documents(loader.load())
 
-    print(
-        f"EPUB content titled '{title}' has been loaded and indexed in the database with collection name: '{collection_name}'.")
+    # Confirm success
+    print(f"EPUB content titled '{title}' has been indexed with collection name: '{collection_name}'.")
 
 
 if __name__ == "__main__":

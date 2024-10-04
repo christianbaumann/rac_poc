@@ -21,6 +21,9 @@ def query_db_and_ollama():
     else:
         context = "No relevant documents found."
 
+    # Corrected: define the prompt variable
+    prompt = f"Context: {context}\nAnswer the query: {query}"
+
     # Query Ollama API with context
     response = ollama.chat(model="gemma", prompt=prompt)  # Fixed method to ollama.chat
 

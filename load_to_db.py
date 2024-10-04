@@ -21,10 +21,10 @@ def save_to_db(epub_path):
     epub_text = load_epub(epub_path)
 
     # Write EPUB text to temporary file
-    with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
+    with open("temp_epub_text.txt", "w", encoding="utf-8") as f:  # Set encoding to UTF-8 to handle special characters
         f.write(epub_text)
 
-    loader = TextLoader("temp_epub_text.txt")
+    loader = TextLoader("temp_epub_text.txt", encoding="utf-8")  # Ensure the loader reads the file with the correct encoding
 
     # Use HuggingFaceEmbeddings from the updated package
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
@@ -32,7 +32,7 @@ def save_to_db(epub_path):
     # Set up ChromaDB client
     vectorstore = chromadb.PersistentClient(path='db')
 
-    # Create index with embeddings using `from_documents` method (corrected from `create_index`)
+    # Create index with embeddings using `from_documents` method
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.from_documents(loader.load())
 

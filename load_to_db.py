@@ -4,6 +4,18 @@ from langchain_community.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import chromadb
+import os
+import re
+
+
+# Helper function to create a valid collection name based on file name
+def generate_valid_collection_name(epub_path):
+    file_name = os.path.basename(epub_path)
+    base_name, _ = os.path.splitext(file_name)
+
+    # Convert to a valid ChromaDB collection name by replacing invalid characters
+    valid_name = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)  # Replace invalid characters with underscores
+    return valid_name[:63]  # Ensure the name is between 3 and 63 characters long
 
 
 # Load EPUB file and extract title
@@ -34,14 +46,18 @@ def save_to_db(epub_path):
     # Set up ChromaDB client
     vectorstore = chromadb.PersistentClient(path='db')
 
-    # Create a collection with the EPUB title as the collection name
-    collection = vectorstore.create_collection(name=title)
+    # Generate a valid collection name based on the input file name
+    collection_name = generate_valid_collection_name(epub_path)
+
+    # Create a collection with the generated valid name
+    collection = vectorstore.create_collection(name=collection_name)
 
     # Create index with embeddings using `from_documents` method
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.from_documents(loader.load())
 
-    print(f"EPUB content titled '{title}' has been loaded and indexed in the database.")
+    print(
+        f"EPUB content titled '{title}' has been loaded and indexed in the database with collection name: '{collection_name}'.")
 
 
 if __name__ == "__main__":

@@ -26,14 +26,14 @@ def save_to_db(epub_path):
 
     loader = TextLoader("temp_epub_text.txt")
 
-    # Use HuggingFaceEmbeddings with a model name
+    # Use HuggingFaceEmbeddings from the updated package
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Set up ChromaDB client
     vectorstore = chromadb.PersistentClient(path='db')
 
-    # Using a different method for index creation due to method deprecation
-    index_creator = VectorstoreIndexCreator(embedding=embeddings, vectorstore=vectorstore)
+    # Create index with embeddings (vectorstore passed separately to avoid validation error)
+    index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.create_index(loader)
 
     print("EPUB content has been loaded and indexed in the database.")

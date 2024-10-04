@@ -22,10 +22,9 @@ def query_db_and_ollama():
         context = "No relevant documents found."
 
     # Query Ollama API with context
-    prompt = f"Context: {context}\nAnswer the query: {query}"
-    response = ollama.complete(prompt=prompt)
+    response = ollama.chat(model="gemma", prompt=prompt)  # Fixed method to ollama.chat
 
-    print(f"Response from Ollama: {response}")
+    print(f"Response from Ollama: {response['text']}")
 
 if __name__ == "__main__":
     query_db_and_ollama()

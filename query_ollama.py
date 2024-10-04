@@ -14,7 +14,7 @@ def query_db_and_ollama():
 
     # Perform a query against the indexed data
     results = collection.query(query_texts=[query], n_results=5)
-    context = " ".join([result for result in results['documents']])  # Fixed incorrect list indexing
+    context = " ".join([result[0] for result in results['documents']])  # Access the first item in the list
 
     # Query Ollama API with context
     prompt = f"Context: {context}\nAnswer the query: {query}"

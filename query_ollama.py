@@ -24,8 +24,8 @@ def query_db_and_ollama():
     # Corrected: define the prompt variable before using it
     prompt = f"Context: {context}\nAnswer the query: {query}"
 
-    # Removed pull_model and correctly structured the Ollama chat call
-    response = ollama.chat(model="gemma", messages=[{"role": "system", "content": prompt}])
+    # Use the correct model "llama3:8b" for the chat
+    response = ollama.chat(model="llama3:8b", messages=[{"role": "system", "content": prompt}])
 
     print(f"Response from Ollama: {response['text']}")
 

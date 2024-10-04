@@ -1,34 +1,34 @@
 import chromadb
 import ollama
 
-# Load the ChromaDB and query it
-def query_db_and_ollama():
-    # Initialize ChromaDB client
-    client = chromadb.PersistentClient(path='db')  # Load from persistent storage
 
-    # Recreate the collection
+# Load ChromaDB and query it with a user's input
+def query_db_and_ollama():
+    # Initialize the ChromaDB client and connect to persistent storage
+    client = chromadb.PersistentClient(path='db')
+
+    # Retrieve the collection that stores indexed documents
     collection = client.get_collection("howcanitestthis")
 
-    # Take user query
+    # Capture the user’s query
     query = input("Enter your query: ")
 
-    # Perform a query against the indexed data
+    # Query the collection for relevant documents
     results = collection.query(query_texts=[query], n_results=5)
 
-    # Ensure the results contain valid documents and access text
-    if 'documents' in results and results['documents']:
-        context = " ".join([result[0] if result else "" for result in results['documents']])
-    else:
-        context = "No relevant documents found."
+    # Extract document content or provide a fallback if no results are found
+    context = " ".join([result[0] if result else "" for result in results['documents']]) if results[
+        'documents'] else "No relevant documents found."
 
-    # Corrected: define the prompt variable before using it
+    # Construct the prompt for the Ollama model using the context from ChromaDB
     prompt = f"Context: {context}\nAnswer the query: {query}"
 
-    # Use the correct model "llama3:8b" for the chat
+    # Send the prompt to Ollama and receive the response
     response = ollama.chat(model="llama3:8b", messages=[{"role": "system", "content": prompt}])
 
-    # Adjusted to access the correct field in the response
+    # Display the content of the response
     print(f"Response from Ollama: {response['message']['content']}")
+
 
 if __name__ == "__main__":
     query_db_and_ollama()

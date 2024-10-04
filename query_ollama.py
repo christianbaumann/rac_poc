@@ -24,8 +24,8 @@ def query_db_and_ollama():
     # Corrected: define the prompt variable before using it
     prompt = f"Context: {context}\nAnswer the query: {query}"
 
-    # Query Ollama API with the correct messages format
-    response = ollama.chat(model="gemma", messages=[{"role": "system", "content": prompt}])
+    # Ensure the model is available locally, pull it if necessary
+    response = ollama.chat(model="gemma", messages=[{"role": "system", "content": prompt}], pull_model=True)
 
     print(f"Response from Ollama: {response['text']}")
 

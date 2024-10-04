@@ -27,7 +27,8 @@ def query_db_and_ollama():
     # Use the correct model "llama3:8b" for the chat
     response = ollama.chat(model="llama3:8b", messages=[{"role": "system", "content": prompt}])
 
-    print(f"Response from Ollama: {response['text']}")
+    # Adjusted to access the correct field in the response
+    print(f"Response from Ollama: {response['message']['content']}")
 
 if __name__ == "__main__":
     query_db_and_ollama()

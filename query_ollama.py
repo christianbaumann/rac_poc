@@ -1,6 +1,9 @@
 import chromadb
 import ollama
 
+# TODO Load model name from config
+# TODO Load collection name from file
+# TODO Offer which collection/ book to load from
 
 # Load ChromaDB and query it with a user's input
 def query_db_and_ollama():

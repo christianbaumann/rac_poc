@@ -9,6 +9,7 @@ import re
 
 
 # TODO Fix warnings
+# TODO Save collection name and book title to file
 
 # Generate a valid collection name based on the file name by sanitizing input
 def generate_valid_collection_name(epub_path):

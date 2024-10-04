@@ -19,20 +19,18 @@ def load_epub(file_path):
 def save_to_db(epub_path):
     epub_text = load_epub(epub_path)
 
-    # Use TextLoader directly with a file path instead of text argument
+    # Use TextLoader with a file path
     with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
         f.write(epub_text)
 
-    loader = TextLoader("temp_epub_text.txt")  # TextLoader requires a file path
+    loader = TextLoader("temp_epub_text.txt")
 
-    # Set up ChromaDB
+    # Set up ChromaDB without passing arguments to VectorstoreIndexCreator directly
     vectorstore = chromadb.PersistentClient(path='db')
-    index_creator = VectorstoreIndexCreator(vectorstore)
-    index_creator.create_from_loader(loader)  # Fixed method
+    index_creator = VectorstoreIndexCreator()  # Removed vectorstore argument
+    index_creator.create_from_loader(loader)
 
     print("EPUB content has been loaded and indexed in the database.")
-
-
 
 
 if __name__ == "__main__":

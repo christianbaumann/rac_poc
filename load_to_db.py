@@ -26,8 +26,8 @@ def save_to_db(epub_path):
 
     loader = TextLoader("temp_epub_text.txt")
 
-    # Use HuggingFaceEmbeddings instead of OpenAIEmbeddings to avoid extra dependencies
-    embeddings = HuggingFaceEmbeddings()
+    # Use HuggingFaceEmbeddings with an explicit model name
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Set up ChromaDB
     vectorstore = chromadb.PersistentClient(path='db')

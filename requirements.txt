@@ -1,6 +1,7 @@
-langchain
 chromadb
-ollama
 ebooklib
-pypdf
+langchain
 langchain-community
+ollama
+pypdf
+sentence-transformers

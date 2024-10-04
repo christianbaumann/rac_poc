@@ -1,8 +1,8 @@
 import ebooklib
 from ebooklib import epub
-from langchain_community.document_loaders import TextLoader  # Updated import
+from langchain_community.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
-import chromadb  # Fixed import
+import chromadb
 
 
 # Load EPUB file
@@ -20,11 +20,12 @@ def save_to_db(epub_path):
     epub_text = load_epub(epub_path)
 
     # Create a document loader
-    loader = TextLoader(epub_text)
+    loader = TextLoader.from_text(epub_text)  # Updated loader to match expected method
 
     # Set up ChromaDB
     vectorstore = chromadb.PersistentClient(path='db')  # Fixed persistent storage
-    VectorstoreIndexCreator(vectorstore).create_from_loader(loader)
+    index_creator = VectorstoreIndexCreator(vectorstore)
+    index_creator.create_from_text(epub_text)  # Corrected method call
 
     print("EPUB content has been loaded and indexed in the database.")
 

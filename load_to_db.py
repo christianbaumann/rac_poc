@@ -2,7 +2,7 @@ import ebooklib
 from ebooklib import epub
 from langchain_community.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import chromadb
 
 
@@ -26,8 +26,8 @@ def save_to_db(epub_path):
 
     loader = TextLoader("temp_epub_text.txt")
 
-    # Set up embeddings for ChromaDB
-    embeddings = OpenAIEmbeddings()
+    # Use HuggingFaceEmbeddings instead of OpenAIEmbeddings to avoid extra dependencies
+    embeddings = HuggingFaceEmbeddings()
 
     # Set up ChromaDB
     vectorstore = chromadb.PersistentClient(path='db')

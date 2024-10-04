@@ -32,9 +32,9 @@ def save_to_db(epub_path):
     # Set up ChromaDB client
     vectorstore = chromadb.PersistentClient(path='db')
 
-    # Create index with embeddings (vectorstore passed separately to avoid validation error)
+    # Create index with embeddings using `from_documents` method (corrected from `create_index`)
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
-    index_creator.create_index(loader)
+    index_creator.from_documents(loader.load())
 
     print("EPUB content has been loaded and indexed in the database.")
 

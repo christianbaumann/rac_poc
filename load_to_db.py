@@ -47,7 +47,8 @@ def save_to_db(epub_path):
     collection = vectorstore.create_collection(name=collection_name)
     print(f"Created collection: {collection_name}")
 
-    index_creator = VectorstoreIndexCreator(vectorstore=vectorstore, embedding=embeddings)
+    # Use the VectorstoreIndexCreator without passing the vectorstore argument
+    index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.from_documents(loader.load())
 
     documents_in_collection = vectorstore.get_collection(collection_name).count()

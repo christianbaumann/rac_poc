@@ -37,6 +37,7 @@ def load_epub(file_path):
 # Load the EPUB content and save it to ChromaDB
 def save_to_db(epub_path):
     epub_text, title = load_epub(epub_path)
+    # print(f"Parsed EPUB text (first 500 characters): {epub_text[:500]}")  # To check a portion of the content
 
     # Write the text content to a temporary file with UTF-8 encoding
     with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
@@ -50,14 +51,23 @@ def save_to_db(epub_path):
 
     # Initialize the ChromaDB client and create a valid collection name
     vectorstore = chromadb.PersistentClient(path='db')
-    collection_name = generate_valid_collection_name(epub_path) + "2"
+    collection_name = generate_valid_collection_name(epub_path)
 
     # Create a collection with the sanitized name in ChromaDB
     collection = vectorstore.create_collection(name=collection_name)
+    print(f"Created collection: {collection_name}")
 
     # Index the documents with embeddings in the ChromaDB collection
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
     index_creator.from_documents(loader.load())
+
+    # Check how many documents were indexed after indexing
+    documents_in_collection = vectorstore.get_collection(collection_name).count()
+    print(f"Number of documents indexed: {documents_in_collection}")
+
+    # List all collections to verify
+    collections = vectorstore.list_collections()
+    print(f"All collections: {[col.name for col in collections]}")
 
     # Confirm success
     print(f"EPUB content titled '{title}' has been indexed with collection name: '{collection_name}'.")

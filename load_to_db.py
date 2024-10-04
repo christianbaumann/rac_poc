@@ -20,14 +20,15 @@ def save_to_db(epub_path):
     epub_text = load_epub(epub_path)
 
     # Create a document loader
-    loader = TextLoader.from_text(epub_text)  # Updated loader to match expected method
+    loader = TextLoader(text=epub_text)  # Corrected method for TextLoader initialization
 
     # Set up ChromaDB
-    vectorstore = chromadb.PersistentClient(path='db')  # Fixed persistent storage
+    vectorstore = chromadb.PersistentClient(path='db')
     index_creator = VectorstoreIndexCreator(vectorstore)
-    index_creator.create_from_text(epub_text)  # Corrected method call
+    index_creator.create_from_loader(loader)  # Fixed the method call
 
     print("EPUB content has been loaded and indexed in the database.")
+
 
 
 if __name__ == "__main__":

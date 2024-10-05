@@ -66,7 +66,7 @@ def save_to_db(epub_path):
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Directly add documents to the collection with embeddings
-    for idx, chunk in text_chunks:
+    for idx, chunk in enumerate(text_chunks):  # Use enumerate to get the index and chunk
         # Create a unique ID for each document
         doc_id = f"doc_{idx}"
         print(f"Indexing document {idx}: {chunk[:100]}")  # Print first 100 characters of each chunk

@@ -8,6 +8,7 @@ from ebooklib import epub
 from langchain_community.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain_huggingface import HuggingFaceEmbeddings
+from bs4 import BeautifulSoup
 import chromadb
 import os
 import re
@@ -22,14 +23,22 @@ def generate_valid_collection_name(epub_path):
     return valid_name[:63]
 
 
+# Load EPUB content and extract the title for indexing
 def load_epub(file_path):
     book = epub.read_epub(file_path)
     text_content = ''
-    title = book.get_metadata('DC', 'title')[0][0]
+    title = book.get_metadata('DC', 'title')[0][0]  # Fetch the title from EPUB metadata
 
+    # Concatenate the text content from document items in the EPUB
     for item in book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
-            text_content += item.get_content().decode('utf-8')
+            # Parse the content with BeautifulSoup to strip away HTML tags
+            soup = BeautifulSoup(item.get_content().decode('utf-8'), 'html.parser')
+            text_content += soup.get_text()  # Extract just the textual content
+
+    # Log the extracted text for verification
+    print(f"Extracted text (first 500 characters): {text_content[:500]}")
+
     return text_content, title
 
 

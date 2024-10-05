@@ -1,17 +1,26 @@
 import chromadb
+import json
 import ollama
 
-# TODO Load model name from config
+
 # TODO Load collection name from file
 # TODO Make usable with WebUI
 # TODO Offer which collection/ book to load from
 # TODO Load all collections?
+
+# Load model name from config file
+def load_model_name_from_config(config_file="model.config.json"):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config.get("model_name", "llama3:8b")  # Default model if not found in config
+
 
 # Initialize ChromaDB client and retrieve the collection
 def initialize_chromadb_client(path='db', collection_name="howcanitestthis"):
     client = chromadb.PersistentClient(path=path)
     collection = client.get_collection(collection_name)
     return collection
+
 
 # Query ChromaDB and return combined context from documents
 def query_chromadb(collection, query, n_results=5):
@@ -26,11 +35,14 @@ def query_chromadb(collection, query, n_results=5):
 
     return context
 
+
+
 # Construct the prompt for the LLM
 def construct_ollama_prompt(context, query):
     prompt = f"Context: {context}\nAnswer the query: {query}"
     print(f"Generated prompt for Ollama: {prompt}")
     return prompt
+
 
 # Main function to handle the RAG flow
 def query_db_and_ollama():
@@ -46,11 +58,15 @@ def query_db_and_ollama():
     # Construct the prompt for Ollama
     prompt = construct_ollama_prompt(context, query)
 
+    # Load model name from config
+    model_name = load_model_name_from_config()
+
     # Send the prompt to Ollama and receive the response
-    response = ollama.chat(model="llama3:8b", messages=[{"role": "system", "content": prompt}])
+    response = ollama.chat(model=model_name, messages=[{"role": "system", "content": prompt}])
 
     # Display the content of the response
     print(f"Response from Ollama: {response['message']['content']}")
+
 
 if __name__ == "__main__":
     query_db_and_ollama()

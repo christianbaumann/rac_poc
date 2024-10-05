@@ -3,6 +3,7 @@ import ollama
 
 # TODO Load model name from config
 # TODO Load collection name from file
+# TODO Make usable with WebUI
 # TODO Offer which collection/ book to load from
 # TODO Load all collections?
 

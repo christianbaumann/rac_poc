@@ -21,9 +21,8 @@ def query_db_and_ollama():
     # Add logging for query results
     print(f"Query results: {results}")
 
-    # Extract document content or provide a fallback if no results are found
-    context = " ".join([result[0] if result else "" for result in results['documents']]) if results[
-        'documents'] else "No relevant documents found."
+    # Combine all the document snippets into a single context
+    context = " ".join([" ".join(doc) for doc in results['documents']]) if results['documents'] else "No relevant documents found."
 
     # Construct the prompt for the Ollama model using the context from ChromaDB
     prompt = f"Context: {context}\nAnswer the query: {query}"
@@ -35,7 +34,6 @@ def query_db_and_ollama():
 
     # Display the content of the response
     print(f"Response from Ollama: {response['message']['content']}")
-
 
 if __name__ == "__main__":
     query_db_and_ollama()

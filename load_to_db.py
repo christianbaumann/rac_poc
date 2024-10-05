@@ -36,56 +36,49 @@ def load_epub(file_path):
             soup = BeautifulSoup(item.get_content().decode('utf-8'), 'html.parser')
             text_content += soup.get_text()  # Extract just the textual content
 
-    # Log the extracted text for verification
-    print(f"Extracted text (first 500 characters): {text_content[:500]}")
+    # Clean up the text by removing excessive newlines and spaces
+    text_content = re.sub(r'\n\s*\n+', '\n\n', text_content.strip())  # Remove excessive newlines and spaces
 
-    return text_content, title
+    # Split text into paragraphs or smaller chunks to improve indexing
+    text_chunks = text_content.split("\n\n")  # Split based on double newlines (paragraphs)
+
+    # Log the extracted and cleaned text
+    print(f"Extracted text chunks (first 5 chunks): {text_chunks[:5]}")
+
+    return text_chunks, title
 
 
-# Load the EPUB content and save it to ChromaDB
 def save_to_db(epub_path):
-    epub_text, title = load_epub(epub_path)
+    text_chunks, title = load_epub(epub_path)
 
-    # Verify the text content is correctly parsed
-    if len(epub_text.strip()) == 0:
-        print("Error: Parsed EPUB text is empty.")
+    if len(text_chunks) == 0:
+        print("Error: No meaningful content to index.")
         return
 
-    # Write the text content to a temporary file with UTF-8 encoding
+    # Write the text chunks to a temporary file with UTF-8 encoding
     with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
-        f.write(epub_text)
-
-    # Verify the temporary file contains the correct content
-    with open("temp_epub_text.txt", "r", encoding="utf-8") as f:
-        loaded_text = f.read()
-        print(f"Loaded text (first 500 characters): {loaded_text[:500]}")
+        for chunk in text_chunks:
+            f.write(chunk + "\n\n")  # Write each chunk as a separate paragraph
 
     loader = TextLoader("temp_epub_text.txt", encoding="utf-8")
 
-    # Use HuggingFaceEmbeddings for embedding the document
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Initialize the ChromaDB client and create a valid collection name
     vectorstore = chromadb.PersistentClient(path='db')
     collection_name = generate_valid_collection_name(epub_path)
 
-    # Create a collection with the sanitized name in ChromaDB
     collection = vectorstore.create_collection(name=collection_name)
     print(f"Created collection: {collection_name}")
 
-    # Index the documents with embeddings in the ChromaDB collection
     index_creator = VectorstoreIndexCreator(embedding=embeddings)
     indexed_documents = index_creator.from_documents(loader.load())
 
-    # Check how many documents were indexed after indexing
     documents_in_collection = vectorstore.get_collection(collection_name).count()
     print(f"Number of documents indexed: {documents_in_collection}")
 
-    # List all collections to verify
     collections = vectorstore.list_collections()
     print(f"All collections: {[col.name for col in collections]}")
 
-    # Confirm success
     print(f"EPUB content titled '{title}' has been indexed with collection name: '{collection_name}'.")
 
 

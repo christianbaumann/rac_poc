@@ -5,13 +5,12 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import ebooklib
 from ebooklib import epub
-from langchain_community.document_loaders import TextLoader
-from langchain.indexes import VectorstoreIndexCreator
-from langchain_huggingface import HuggingFaceEmbeddings
-from bs4 import BeautifulSoup
-import chromadb
 import os
 import re
+from bs4 import BeautifulSoup
+import chromadb
+from chromadb.utils import embedding_functions
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 # TODO Save collection name and book title to file
@@ -48,7 +47,6 @@ def load_epub(file_path):
     return text_chunks, title
 
 
-# Directly interact with ChromaDB to ensure proper document indexing
 def save_to_db(epub_path):
     text_chunks, title = load_epub(epub_path)
 
@@ -65,19 +63,17 @@ def save_to_db(epub_path):
     print(f"Created collection: {collection_name}")
 
     # Initialize HuggingFace embeddings
-    embedding_func = embedding_functions.EmbeddingFunction(
-        HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2").embed_query
-    )
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     # Directly add documents to the collection with embeddings
-    for idx, chunk in enumerate(text_chunks):
+    for idx, chunk in text_chunks:
         # Create a unique ID for each document
         doc_id = f"doc_{idx}"
         print(f"Indexing document {idx}: {chunk[:100]}")  # Print first 100 characters of each chunk
         collection.add(
             ids=[doc_id],  # Unique ID for each chunk
             documents=[chunk],  # The document content (chunk)
-            embeddings=[embedding_func(chunk)]  # Embedding of the chunk
+            embeddings=[embeddings.embed_query(chunk)]  # Directly use the embedding function
         )
 
     # Check how many documents were indexed after indexing

@@ -5,8 +5,6 @@ import ollama
 
 # TODO Load collection name from file
 # TODO Make usable with WebUI
-# TODO Offer which collection/ book to load from
-# TODO Load all collections?
 
 # Load model name from config file
 def load_model_name_from_config(config_file="model.config.json"):
@@ -15,26 +13,33 @@ def load_model_name_from_config(config_file="model.config.json"):
     return config.get("model_name", "llama3:8b")  # Default model if not found in config
 
 
-# Initialize ChromaDB client and retrieve the collection
-def initialize_chromadb_client(path='db', collection_name="howcanitestthis"):
+# Initialize ChromaDB client and retrieve all collections
+def initialize_chromadb_client(path='db'):
     client = chromadb.PersistentClient(path=path)
-    collection = client.get_collection(collection_name)
-    return collection
+    collections = client.list_collections()  # Retrieve all collections
+    return collections
 
 
-# Query ChromaDB and return combined context from documents
-def query_chromadb(collection, query, n_results=5):
-    results = collection.query(query_texts=[query], n_results=n_results)
-    print(f"Query results: {results}")
+# Query ChromaDB and return combined context from documents across all collections
+def query_chromadb_all_collections(collections, query, n_results=5):
+    combined_context = ""
 
-    # Combine all the document snippets into a single context
-    if results['documents']:
-        context = " ".join([" ".join(doc) for doc in results['documents']])
-    else:
-        context = "No relevant documents found."
+    for collection_name in collections:
+        collection = collections[collection_name]
+        results = collection.query(query_texts=[query], n_results=n_results)
+        print(f"Query results from collection '{collection_name}': {results}")
 
-    return context
+        # Combine all the document snippets from this collection into a single context
+        if results['documents']:
+            collection_context = " ".join([" ".join(doc) for doc in results['documents']])
+            combined_context += collection_context + " "
+        else:
+            print(f"No relevant documents found in collection '{collection_name}'.")
 
+    if not combined_context:
+        combined_context = "No relevant documents found in any collection."
+
+    return combined_context
 
 
 # Construct the prompt for the LLM
@@ -46,14 +51,14 @@ def construct_ollama_prompt(context, query):
 
 # Main function to handle the RAG flow
 def query_db_and_ollama():
-    # Initialize the ChromaDB client and collection
-    collection = initialize_chromadb_client()
+    # Initialize the ChromaDB client and retrieve all collections
+    collections = initialize_chromadb_client()
 
     # Capture the user’s query
     query = input("Enter your query: ")
 
-    # Query the collection and get the context
-    context = query_chromadb(collection, query)
+    # Query all collections and get the combined context
+    context = query_chromadb_all_collections(collections, query)
 
     # Construct the prompt for Ollama
     prompt = construct_ollama_prompt(context, query)

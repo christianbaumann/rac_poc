@@ -48,6 +48,7 @@ def load_epub(file_path):
     return text_chunks, title
 
 
+# Directly interact with ChromaDB to ensure proper document indexing
 def save_to_db(epub_path):
     text_chunks, title = load_epub(epub_path)
 
@@ -55,30 +56,39 @@ def save_to_db(epub_path):
         print("Error: No meaningful content to index.")
         return
 
-    # Write the text chunks to a temporary file with UTF-8 encoding
-    with open("temp_epub_text.txt", "w", encoding="utf-8") as f:
-        for chunk in text_chunks:
-            f.write(chunk + "\n\n")  # Write each chunk as a separate paragraph
-
-    loader = TextLoader("temp_epub_text.txt", encoding="utf-8")
-
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
+    # Initialize the ChromaDB client and create a valid collection name
     vectorstore = chromadb.PersistentClient(path='db')
     collection_name = generate_valid_collection_name(epub_path)
 
+    # Create a collection with the sanitized name in ChromaDB
     collection = vectorstore.create_collection(name=collection_name)
     print(f"Created collection: {collection_name}")
 
-    index_creator = VectorstoreIndexCreator(embedding=embeddings)
-    indexed_documents = index_creator.from_documents(loader.load())
+    # Initialize HuggingFace embeddings
+    embedding_func = embedding_functions.EmbeddingFunction(
+        HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2").embed_query
+    )
 
-    documents_in_collection = vectorstore.get_collection(collection_name).count()
+    # Directly add documents to the collection with embeddings
+    for idx, chunk in enumerate(text_chunks):
+        # Create a unique ID for each document
+        doc_id = f"doc_{idx}"
+        print(f"Indexing document {idx}: {chunk[:100]}")  # Print first 100 characters of each chunk
+        collection.add(
+            ids=[doc_id],  # Unique ID for each chunk
+            documents=[chunk],  # The document content (chunk)
+            embeddings=[embedding_func(chunk)]  # Embedding of the chunk
+        )
+
+    # Check how many documents were indexed after indexing
+    documents_in_collection = collection.count()
     print(f"Number of documents indexed: {documents_in_collection}")
 
+    # List all collections to verify
     collections = vectorstore.list_collections()
     print(f"All collections: {[col.name for col in collections]}")
 
+    # Confirm success
     print(f"EPUB content titled '{title}' has been indexed with collection name: '{collection_name}'.")
 
 

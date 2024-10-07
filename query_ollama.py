@@ -23,17 +23,16 @@ def initialize_chromadb_client(path='db'):
 def query_chromadb_all_collections(collections, query, n_results=5):
     combined_context = ""
 
-    for collection_name in collections:
-        collection = collections[collection_name]
+    for collection in collections:
         results = collection.query(query_texts=[query], n_results=n_results)
-        print(f"Query results from collection '{collection_name}': {results}")
+        print(f"Query results from collection '{collection.name}': {results}")
 
         # Combine all the document snippets from this collection into a single context
         if results['documents']:
             collection_context = " ".join([" ".join(doc) for doc in results['documents']])
             combined_context += collection_context + " "
         else:
-            print(f"No relevant documents found in collection '{collection_name}'.")
+            print(f"No relevant documents found in collection '{collection.name}'.")
 
     if not combined_context:
         combined_context = "No relevant documents found in any collection."

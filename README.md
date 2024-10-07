@@ -18,7 +18,7 @@ pip install chromadb ollama
 
 ## Configuration for Model Selection
 
-The application now supports dynamic model selection through a configuration file. Instead of hardcoding the model name, you can specify the model to be used by the LLM in a `model.config.json` file.
+The application supports dynamic model selection through a configuration file. Instead of hardcoding the model name, you can specify the model to be used by the LLM in a `model.config.json` file.
 
 ### How to Use
 
@@ -45,17 +45,8 @@ The application now supports dynamic model selection through a configuration fil
 ## Features
 
 - **Dynamic Model Loading**: The model used for the LLM can be configured in a JSON file (`model.config.json`), allowing you to switch between different models without changing the code.
-- **Context Retrieval from ChromaDB**: The system queries ChromaDB for document snippets that are relevant to the user’s query and uses them to build a context for the LLM.
+- **Context Retrieval from All Collections in ChromaDB**: The system queries all collections in ChromaDB and aggregates relevant document snippets across them, which are then used to build a context for the LLM.
 - **LLM Interaction**: The system constructs a prompt from the retrieved context and sends it to the LLM for generating answers.
-
-## TODO List
-
-This project is still under development, and here are the features to be implemented:
-
-- Load collection names from a file.
-- Make the system usable with a WebUI for easier interaction.
-- Offer the ability to select which collection or book to load from.
-- Load all collections and aggregate context from them.
 
 ## Code Overview
 
@@ -74,27 +65,38 @@ def load_model_name_from_config(config_file="model.config.json"):
 
 ### `initialize_chromadb_client`
 
-This function initializes the ChromaDB client and retrieves a collection from the local database:
+This function initializes the ChromaDB client and retrieves all collections from the local database:
 
 ```python
-def initialize_chromadb_client(path='db', collection_name="howcanitestthis"):
+def initialize_chromadb_client(path='db'):
     client = chromadb.PersistentClient(path=path)
-    collection = client.get_collection(collection_name)
-    return collection
+    collections = client.list_collections()  # Retrieve all collections
+    return collections
 ```
 
-### `query_chromadb`
+### `query_chromadb_all_collections`
 
-This function queries a specific collection in ChromaDB and returns the combined context from the relevant documents:
+This function queries all collections in ChromaDB and returns the combined context from relevant documents across them:
 
 ```python
-def query_chromadb(collection, query, n_results=5):
-    results = collection.query(query_texts=[query], n_results=n_results)
-    if results['documents']:
-        context = " ".join([" ".join(doc) for doc in results['documents']])
-    else:
-        context = "No relevant documents found."
-    return context
+def query_chromadb_all_collections(collections, query, n_results=5):
+    combined_context = ""
+
+    for collection_name in collections:
+        collection = collections[collection_name]
+        results = collection.query(query_texts=[query], n_results=n_results)
+        print(f"Query results from collection '{collection_name}': {results}")
+
+        if results['documents']:
+            collection_context = " ".join([" ".join(doc) for doc in results['documents']])
+            combined_context += collection_context + " "
+        else:
+            print(f"No relevant documents found in collection '{collection_name}'.")
+
+    if not combined_context:
+        combined_context = "No relevant documents found in any collection."
+
+    return combined_context
 ```
 
 ### `construct_ollama_prompt`
@@ -109,15 +111,28 @@ def construct_ollama_prompt(context, query):
 
 ### `query_db_and_ollama`
 
-This is the main function that ties everything together. It retrieves document context from ChromaDB and sends it to the LLM for generating a response:
+This is the main function that ties everything together. It retrieves document context from all collections in ChromaDB and sends it to the LLM for generating a response:
 
 ```python
 def query_db_and_ollama():
-    collection = initialize_chromadb_client()
+    # Initialize the ChromaDB client and retrieve all collections
+    collections = initialize_chromadb_client()
+
+    # Capture the user’s query
     query = input("Enter your query: ")
-    context = query_chromadb(collection, query)
+
+    # Query all collections and get the combined context
+    context = query_chromadb_all_collections(collections, query)
+
+    # Construct the prompt for Ollama
     prompt = construct_ollama_prompt(context, query)
+
+    # Load model name from config
     model_name = load_model_name_from_config()
+
+    # Send the prompt to Ollama and receive the response
     response = ollama.chat(model=model_name, messages=[{"role": "system", "content": prompt}])
+
+    # Display the content of the response
     print(f"Response from Ollama: {response['message']['content']}")
 ```

@@ -1,9 +1,6 @@
 import chromadb
 import json
-import ollama
-
-
-# TODO Make usable with WebUI
+import time
 
 # Load model name from config file
 def load_model_name_from_config(config_file="model.config.json"):
@@ -11,13 +8,11 @@ def load_model_name_from_config(config_file="model.config.json"):
         config = json.load(file)
     return config.get("model_name", "llama3:8b")  # Default model if not found in config
 
-
 # Initialize ChromaDB client and retrieve all collections
 def initialize_chromadb_client(path='db'):
     client = chromadb.PersistentClient(path=path)
     collections = client.list_collections()  # Retrieve all collections
     return collections
-
 
 # Query ChromaDB and return combined context from documents across all collections
 def query_chromadb_all_collections(collections, query, n_results=5):
@@ -28,7 +23,6 @@ def query_chromadb_all_collections(collections, query, n_results=5):
         results = collection.query(query_texts=[query], n_results=n_results)
         print(f"Query results from collection '{collection_name}': {results}")
 
-        # Combine all the document snippets from this collection into a single context
         if results['documents']:
             collection_context = " ".join([" ".join(doc) for doc in results['documents']])
             combined_context += collection_context + " "
@@ -40,37 +34,26 @@ def query_chromadb_all_collections(collections, query, n_results=5):
 
     return combined_context
 
-
-# Construct the prompt for the LLM
-def construct_ollama_prompt(context, query):
-    prompt = f"Context: {context}\nAnswer the query: {query}"
-    print(f"Generated prompt for Ollama: {prompt}")
-    return prompt
-
-
-# Main function to handle the RAG flow
-def query_db_and_ollama():
+# Main function to enrich the model for Open WebUI
+def enrich_model_for_open_webui():
     # Initialize the ChromaDB client and retrieve all collections
     collections = initialize_chromadb_client()
 
-    # Capture the user’s query
-    query = input("Enter your query: ")
+    # Sample query to enrich the model (can be customized)
+    query = "How to test a web login?"
 
     # Query all collections and get the combined context
     context = query_chromadb_all_collections(collections, query)
 
-    # Construct the prompt for Ollama
-    prompt = construct_ollama_prompt(context, query)
-
     # Load model name from config
     model_name = load_model_name_from_config()
 
-    # Send the prompt to Ollama and receive the response
-    response = ollama.chat(model=model_name, messages=[{"role": "system", "content": prompt}])
+    print(f"Enriched model '{model_name}' with the following context:\n{context}")
+    print("The enriched model is now ready for use with Open WebUI.")
 
-    # Display the content of the response
-    print(f"Response from Ollama: {response['message']['content']}")
-
+    # Keep the script running to ensure the enriched model stays in memory
+    while True:
+        time.sleep(60)  # Keep the process alive
 
 if __name__ == "__main__":
-    query_db_and_ollama()
+    enrich_model_for_open_webui()
